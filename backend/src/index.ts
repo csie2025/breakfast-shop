@@ -11,7 +11,15 @@ import { adminRoutes } from "./routes/admin";
 const app = new Elysia()
   .use(
     cors({
-      origin: process.env.FRONTEND_URL || true,
+      origin: ({ request }: { request: Request }) => {
+        const origin = request.headers.get("origin") || "";
+        const allowed = process.env.FRONTEND_URL;
+        if (!allowed || allowed === "*") return true;
+        if (origin === allowed) return true;
+        if (origin.endsWith(".onrender.com")) return true;
+        if (origin.includes("localhost")) return true;
+        return false;
+      },
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
       credentials: true,
