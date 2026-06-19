@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: breakfast-shop-backend
+    runtime: node
+    buildCommand: npm install -g bun && bun install && bunx prisma generate && bunx prisma migrate deploy
+    startCommand: bun run src/index.ts
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false
+    healthCheckPath: /health

@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  STAFF
+  ADMIN
+}
+
+enum OrderStatus {
+  pending
+  preparing
+  ready
+  completed
+  cancelled
+}
+
+enum DeliveryMethod {
+  pickup
+  delivery
+}
+
+enum PaymentMethod {
+  credit_card
+  debit_card
+  cash
+  mock
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  phone     String?
+  addresses Address[]
+  orders    Order[]
+  cart      Cart?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuItem {
+  id          String      @id @default(cuid())
+  name        String
+  description String
+  price       Decimal     @db.Decimal(10, 2)
+  category    String
+  imageUrl    String?
+  available   Boolean     @default(true)
+  ingredients String[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Order {
+  id              String               @id @default(cuid())
+  orderNumber     String               @unique
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  subtotal        Decimal              @db.Decimal(10, 2)
+  tax             Decimal              @db.Decimal(10, 2)
+  shippingFee     Decimal              @db.Decimal(10, 2)
+  total           Decimal              @db.Decimal(10, 2)
+  status          OrderStatus          @default(pending)
+  deliveryAddress String?
+  deliveryMethod  DeliveryMethod       @default(pickup)
+  paymentMethod   PaymentMethod        @default(mock)
+  notes           String?
+  statusHistory   OrderStatusHistory[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
+  price      Decimal  @db.Decimal(10, 2)
+  subtotal   Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id])
+  status    OrderStatus
+  timestamp DateTime    @default(now())
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id         String   @id @default(cuid())
+  cartId     String
+  cart       Cart     @relation(fields: [cartId], references: [id])
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  street    String
+  city      String
+  state     String?
+  zipCode   String?
+  country   String   @default("Taiwan")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
